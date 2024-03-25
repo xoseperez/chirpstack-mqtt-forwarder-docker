@@ -11,13 +11,6 @@ services:
     environment:
       MODEL: "RAK7271"
       INTERFACE: "USB"
-      #RESET_GPIO: 17
-      #POWER_EN_GPIO: 0
-      #HAS_GPS: 0
-      #REGION: "EU868"
-      #CHANNELS: "US915_0"
-      #DEBUG: "INFO"
-      #SOCKER_NAME: "concentratord"
 
   mosquitto:
     image: eclipse-mosquitto
@@ -33,7 +26,7 @@ services:
     container_name: chirpstack-mqtt-forwarder
 
     # use pre-defined image
-    #image: xoseperez/chirpstack-mqtt-forwarder
+    image: xoseperez/chirpstack-mqtt-forwarder
 
     # or comment out image: and build it yourself
     #build:
