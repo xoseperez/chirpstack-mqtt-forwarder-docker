@@ -1,0 +1,114 @@
+services:
+
+  chirpstack-concentratord:
+    
+    container_name: chirpstack-concentratord
+    image: xoseperez/chirpstack-concentratord
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /tmp:/tmp
+    environment:
+      MODEL: "RAK7271"
+      INTERFACE: "USB"
+      #RESET_GPIO: 17
+      #POWER_EN_GPIO: 0
+      #HAS_GPS: 0
+      #REGION: "EU868"
+      #CHANNELS: "US915_0"
+      #DEBUG: "INFO"
+      #SOCKER_NAME: "concentratord"
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  chirpstack-mqtt-forwarder:
+    
+    container_name: chirpstack-mqtt-forwarder
+
+    # use pre-defined image
+    #image: xoseperez/chirpstack-mqtt-forwarder
+
+    # or comment out image: and build it yourself
+    #build:
+    #  context: .
+    #  args:
+    #    ARCH: amd64
+    #    VERSION: 4.2.3
+
+    restart: unless-stopped
+    privileged: true
+
+    depends_on:
+      - chirpstack-concentratord
+      - mosquitto
+
+    volumes:
+      - /tmp:/tmp
+    
+    environment:
+
+      # Set debug level (TRACE, DEBUG, INFO, WARN, ERROR, OFF). Defaults to INFO.
+      LOGGING_LEVEL: "INFO"
+
+      # Topic prefix, messages will be sent to <prefix>/gateway/<gateway_id>/event/<event_type>
+      #MQTT_TOPIC_PREFIX: "eu868"
+
+      # MQTT broker (usually provided by the LNS)
+      MQTT_SERVER: "tcp://mosquitto:1883"
+
+      # MQTT username
+      #MQTT_USERNAME: ""
+      
+      # MQTT password
+      #MQTT_PASSWORD: ""
+      
+      # MQTT quality of service
+      #MQTT_QOS: 0
+      
+      # Mount paths for certificates (must certificates and keys as a volume)
+      #MQTT_CA_CERT_PATH: ""
+      #MQTT_CLIENT_CERT_PATH: ""
+      #MQTT_CLIENT_KEY_PATH: ""
+      
+      # Send MQTT messages as JSON instead of Protobuf (only for debugging purposes)
+      #MQTT_JSON: "false"
+      
+      # Backend to use (either 'concentratord' or 'semtech_udp')
+      #BACKEND: "concentratord"
+      
+      # Name of the socket to connect to when using conocentratord backend (this will connect to ipc:///tmp/<socket>_event and _command)
+      #BACKEND_SOCKET_NAME: "concentratord"
+      
+      # Address to listen to UDP messages when using semtech_udp backend
+      #BACKEND_UDP_BIND: "0.0.0.0:1700"
+      
+      # DevAddr prefix filters.
+      #
+      # Example configuration:
+      # BACKEND_FILTER_DEVADDR: "0000ff00/24"
+      #
+      # The above filter means that the 24MSB of 0000ff00 will be used to
+      # filter DevAddrs. Uplinks with DevAddrs that do not match any of the
+      # configured filters will not be forwarded. Leaving this option empty
+      # disables filtering on DevAddr.
+      #BACKEND_FILTER_DEVADDR: ""
+
+      # JoinEUI prefix filters.
+      #
+      # Example configuration:
+      # BACKEND_FILTER_JOINEUI: "0000ff0000000000/24"
+      #
+      # The above filter means that the 24MSB of 0000ff0000000000 will be used
+      # to filter JoinEUIs. Uplinks with JoinEUIs that do not match any of the
+      # configured filters will not be forwarded. Leaving this option empty
+      # disables filtering on JoinEUI.
+      #BACKEND_FILTER_JOINEUI: ""
+
+

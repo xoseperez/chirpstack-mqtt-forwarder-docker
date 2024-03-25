@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------------------
+# Colors
+# -----------------------------------------------------------------------------
+
+COLOR_INFO="\e[32m" # green
+COLOR_WARNING="\e[33m" # yellow
+COLOR_ERROR="\e[31m" # red
+COLOR_RESET="\e[0m"
+
+# -----------------------------------------------------------------------------
+# Utils
+# -----------------------------------------------------------------------------
+
+replace_placeholder() {
+
+    FILE="$1"
+    NAME="$2"
+    VALUE="$3"
+
+    sed 's|{{'"${NAME}"'}}|'"${VALUE}"'|g' -i "${FILE}"
+
+}
+
+# -----------------------------------------------------------------------------
+# Defaults
+# -----------------------------------------------------------------------------
+
+LOGGING_LEVEL=${LOGGING_LEVEL:-"INFO"}
+MQTT_TOPIC_PREFIX=${MQTT_TOPIC_PREFIX:-"eu868"}
+MQTT_SERVER=${MQTT_SERVER:-"tcp://mosquitto:1883"}
+MQTT_USERNAME=${MQTT_USERNAME:-""}
+MQTT_PASSWORD=${MQTT_PASSWORD:-""}
+MQTT_QOS=${MQTT_QOS:-0}
+MQTT_CA_CERT_PATH=${MQTT_CA_CERT_PATH:-""}
+MQTT_CLIENT_CERT_PATH=${MQTT_CLIENT_CERT_PATH:-""}
+MQTT_CLIENT_KEY_PATH=${MQTT_CLIENT_KEY_PATH:-""}
+MQTT_JSON=${MQTT_JSON:-"false"}
+BACKEND=${BACKEND:-"concentratord"}
+BACKEND_SOCKET_NAME=${BACKEND_SOCKET_NAME:-"concentratord"}
+BACKEND_UDP_BIND=${BACKEND_UDP_BIND:-"0.0.0.0:1700"}
+BACKEND_FILTER_DEVADDR=${BACKEND_FILTER_DEVADDR:-""}
+BACKEND_FILTER_JOINEUI=${BACKEND_FILTER_JOINEUI:-""}
+
+# -----------------------------------------------------------------------------
+# Check
+# -----------------------------------------------------------------------------
+
+if [[ "${BACKEND}" != "concentratord" ]] && [[ "${BACKEND}" != "semtech_udp" ]]; then
+    echo "ERROR: backend must be either 'concentratord' or 'semtech_udp'"
+    sleep 5
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# Build configuration
+# -----------------------------------------------------------------------------
+
+CONFIG_FILE=./config.toml
+
+# Copy template
+cp chirpstack-mqtt-forwarder.toml.template "${CONFIG_FILE}"
+
+# Replace values
+replace_placeholder "${CONFIG_FILE}" "LOGGING_LEVEL" "${LOGGING_LEVEL}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_TOPIC_PREFIX" "${MQTT_TOPIC_PREFIX}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_SERVER" "${MQTT_SERVER}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_USERNAME" "${MQTT_USERNAME}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_PASSWORD" "${MQTT_PASSWORD}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_QOS" "${MQTT_QOS}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_CA_CERT_PATH" "${MQTT_CA_CERT_PATH}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_CLIENT_CERT_PATH" "${MQTT_CLIENT_CERT_PATH}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_CLIENT_KEY_PATH" "${MQTT_CLIENT_KEY_PATH}"
+replace_placeholder "${CONFIG_FILE}" "MQTT_JSON" "${MQTT_JSON}"
+replace_placeholder "${CONFIG_FILE}" "BACKEND" "${BACKEND}"
+replace_placeholder "${CONFIG_FILE}" "BACKEND_SOCKET_NAME" "${BACKEND_SOCKET_NAME}"
+replace_placeholder "${CONFIG_FILE}" "BACKEND_UDP_BIND" "${BACKEND_UDP_BIND}"
+replace_placeholder "${CONFIG_FILE}" "BACKEND_FILTER_DEVADDR" "${BACKEND_FILTER_DEVADDR}"
+replace_placeholder "${CONFIG_FILE}" "BACKEND_FILTER_JOINEUI" "${BACKEND_FILTER_JOINEUI}"
+
+# -----------------------------------------------------------------------------
+# Info
+# -----------------------------------------------------------------------------
+
+echo 
+echo -e "${COLOR_INFO}------------------------------------------------------------------"
+echo -e "${COLOR_INFO}$( ./chirpstack-mqtt-forwarder -V )"
+echo -e "${COLOR_INFO}LoRa(WAN) packet forwarder based on MQTT"
+echo -e "${COLOR_INFO}------------------------------------------------------------------"
+echo -e "${COLOR_INFO}Logging level:        ${LOGGING_LEVEL}"
+echo -e "${COLOR_INFO}MQTT broker:          ${MQTT_SERVER}"
+echo -e "${COLOR_INFO}MQTT topic prefix:    ${MQTT_TOPIC_PREFIX}"
+if [[ -n "${MQTT_USERNAME}" ]]; then
+echo -e "${COLOR_INFO}MQTT username:        ${MQTT_USERNAME}"
+echo -e "${COLOR_INFO}MQTT password:        ${MQTT_PASSWORD}"
+fi
+echo -e "${COLOR_INFO}MQTT QoS:             ${MQTT_QOS}"
+if [[ -n "${MQTT_CA_CERT_PATH}" ]]; then
+echo -e "${COLOR_INFO}MQTT CA cert:         ${MQTT_CA_CERT_PATH}"
+echo -e "${COLOR_INFO}MQTT TLS cert:        ${MQTT_CLIENT_CERT_PATH}"
+echo -e "${COLOR_INFO}MQTT TLS key:         ${MQTT_CLIENT_KEY_PATH}"
+fi
+echo -e "${COLOR_INFO}Backend:              ${BACKEND}"
+if [[ "${BACKEND}" == "concentratord" ]]; then
+echo -e "${COLOR_INFO}Socket name:          ${BACKEND_SOCKET_NAME}"
+else
+echo -e "${COLOR_INFO}UDP bind:             ${BACKEND_UDP_BIND}"
+fi
+if [[ -n "${BACKEND_FILTER_DEVADDR}" ]]; then
+echo -e "${COLOR_INFO}Filter by DevAddr:    ${BACKEND_FILTER_DEVADDR}"
+fi
+if [[ -n "${BACKEND_FILTER_JOINEUI}" ]]; then
+echo -e "${COLOR_INFO}Filter by Join EUI:   ${BACKEND_FILTER_JOINEUI}"
+fi
+echo -e "${COLOR_INFO}------------------------------------------------------------------"
+echo -e "${COLOR_INFO}Resources: https://www.chirpstack.io/docs/chirpstack-mqtt-forwarder"
+echo -e "${COLOR_INFO}           https://github.com/chirpstack/chirpstack-mqtt-forwarder"
+echo -e "${COLOR_INFO}------------------------------------------------------------------"
+echo -e "${COLOR_RESET}" 
+
+# -----------------------------------------------------------------------------
+# Manage sockets
+# -----------------------------------------------------------------------------
+
+sleep 2
+
+while [[ ! -S "/tmp/${BACKEND_SOCKET_NAME}_event" ]]; do sleep 1; done
+
+# -----------------------------------------------------------------------------
+# Start mqtt-forwarder
+# -----------------------------------------------------------------------------
+./chirpstack-mqtt-forwarder -c "${CONFIG_FILE}"
