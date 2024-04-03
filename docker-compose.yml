@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     privileged: true
     volumes:
-      - /tmp:/tmp
+      - ipcfolder:/tmp
     environment:
       MODEL: "RAK7271"
       INTERFACE: "USB"
@@ -43,7 +43,12 @@ services:
       - mosquitto
 
     volumes:
-      - /tmp:/tmp
+      - ipcfolder:/tmp
+    
+    #secrets:
+    #  - ca.pem
+    #  - cert.pem
+    #  - key.pem
     
     environment:
 
@@ -65,10 +70,10 @@ services:
       # MQTT quality of service
       #MQTT_QOS: 0
       
-      # Mount paths for certificates (must certificates and keys as a volume)
-      #MQTT_CA_CERT_PATH: ""
-      #MQTT_CLIENT_CERT_PATH: ""
-      #MQTT_CLIENT_KEY_PATH: ""
+      # Add certificates as docker secrets
+      #MQTT_CA_CERT_PATH: "/run/secrets/ca.pem"
+      #MQTT_CLIENT_CERT_PATH: "/run/secrets/cert.pem"
+      #MQTT_CLIENT_KEY_PATH: "/run/secrets/key.pem"
       
       # Send MQTT messages as JSON instead of Protobuf (only for debugging purposes)
       #MQTT_JSON: "false"
@@ -105,3 +110,13 @@ services:
       #BACKEND_FILTER_JOINEUI: ""
 
 
+#secrets:
+#  ca.pem:
+#    file: ca.pem
+#  cert.pem:
+#    file: cert.pem
+#  key.pem:
+#    file: key.pem        
+
+volumes:
+  ipcfolder:
