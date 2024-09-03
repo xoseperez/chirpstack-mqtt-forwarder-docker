@@ -6,7 +6,7 @@
 # Globals
 # -----------------------------------------------------------------------------
 
-VERSION="4.2.3"
+VERSION="4.3.1"
 PUSH=0
 TARGETS=()
 MANIFEST_TOOL=manifest-tool
