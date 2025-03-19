@@ -28,6 +28,7 @@ replace_placeholder() {
 # -----------------------------------------------------------------------------
 
 LOGGING_LEVEL=${LOGGING_LEVEL:-"INFO"}
+KEEP_ALIVE_INTERVAL=${KEEP_ALIVE_INTERVAL:-"30s"}
 MQTT_TOPIC_PREFIX=${MQTT_TOPIC_PREFIX:-"eu868"}
 MQTT_SERVER=${MQTT_SERVER:-"tcp://mosquitto:1883"}
 MQTT_USERNAME=${MQTT_USERNAME:-""}
@@ -64,6 +65,7 @@ cp chirpstack-mqtt-forwarder.toml.template "${CONFIG_FILE}"
 
 # Replace values
 replace_placeholder "${CONFIG_FILE}" "LOGGING_LEVEL" "${LOGGING_LEVEL}"
+replace_placeholder "${CONFIG_FILE}" "KEEP_ALIVE_INTERVAL" "${KEEP_ALIVE_INTERVAL}"
 replace_placeholder "${CONFIG_FILE}" "MQTT_TOPIC_PREFIX" "${MQTT_TOPIC_PREFIX}"
 replace_placeholder "${CONFIG_FILE}" "MQTT_SERVER" "${MQTT_SERVER}"
 replace_placeholder "${CONFIG_FILE}" "MQTT_USERNAME" "${MQTT_USERNAME}"
@@ -130,4 +132,4 @@ while [[ ! -S "/tmp/${BACKEND_SOCKET_NAME}_event" ]]; do sleep 1; done
 # -----------------------------------------------------------------------------
 # Start mqtt-forwarder
 # -----------------------------------------------------------------------------
-./chirpstack-mqtt-forwarder -c "${CONFIG_FILE}"
+exec ./chirpstack-mqtt-forwarder -c "${CONFIG_FILE}"

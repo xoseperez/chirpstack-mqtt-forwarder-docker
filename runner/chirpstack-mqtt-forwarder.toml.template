@@ -81,7 +81,7 @@
   #
   # This defines the maximum time that that should pass without communication
   # between the client and server.
-  keep_alive_interval=""
+  keep_alive_interval="{{KEEP_ALIVE_INTERVAL}}"
 
   # CA certificate file (optional)
   #

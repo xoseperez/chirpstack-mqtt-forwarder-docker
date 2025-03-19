@@ -25,8 +25,8 @@ fi
 # Check we have the manifest modifier tool
 if ! hash ${MANIFEST_TOOL} &> /dev/null; then
   echo "ERROR: ${MANIFEST_TOOL} could not be found!"
-    exit 1
-  fi
+  exit 1
+fi
 
 # -----------------------------------------------------------------------------
 # Parse arguments
@@ -78,7 +78,7 @@ fi
 if [[ ${PUSH} -eq 1 ]]; then
   time docker buildx bake --push "${TARGETS[@]}"
 else
-  time docker buildx bake "${TARGETS[@]}"
+  time docker buildx bake --load "${TARGETS[@]}"
 fi
 
 # -----------------------------------------------------------------------------
